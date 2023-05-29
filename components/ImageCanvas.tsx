@@ -1,80 +1,109 @@
-import { useRef, useState } from 'react';
-import { IMAGE_URLS } from '../data/sample-image-urls';
-import { inferenceSqueezenet } from '../utils/predict';
-import styles from '../styles/Home.module.css';
+import { useMemo, useRef, useState } from "react";
+import { IMAGE_URLS } from "../data/sample-image-urls";
+import { inferenceSqueezenet } from "../utils/predict";
 
 interface Props {
   height: number;
   width: number;
 }
-
+const handleImageUrl = (file: File) => {
+  try {
+    return URL.createObjectURL(file);
+  } catch {
+    return "";
+  }
+};
 const ImageCanvas = (props: Props) => {
-
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  var image: HTMLImageElement;
+  const InputRef = useRef<HTMLInputElement>(null);
   const [topResultLabel, setLabel] = useState("");
   const [topResultConfidence, setConfidence] = useState("");
-  const [inferenceTime, setInferenceTime] = useState("");
-  
-  // Load the image from the IMAGE_URLS array
-  const getImage = () => {
-    var sampleImageUrls: Array<{ text: string; value: string }> = IMAGE_URLS;
-    var random = Math.floor(Math.random() * (9 - 0 + 1) + 0);
-    return sampleImageUrls[random];
-  }
-
-  // Draw image and other  UI elements then run inference
-  const displayImageAndRunInference = () => { 
-    // Get the image
-    image = new Image();
-    var sampleImage = getImage();
-    image.src = sampleImage.value;
-
-    // Clear out previous values.
-    setLabel(`Inferencing...`);
-    setConfidence("");
-    setInferenceTime("");
-
-    // Draw the image on the canvas
-    const canvas = canvasRef.current;
-    const ctx = canvas!.getContext('2d');
-    image.onload = () => {
-      ctx!.drawImage(image, 0, 0, props.width, props.height);
-    }
-   
-    // Run the inference
-    submitInference();
-  };
+  const [imgFile, setImgFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const submitInference = async () => {
-
-    // Get the image data from the canvas and submit inference.
-    var [inferenceResult,inferenceTime] = await inferenceSqueezenet(image.src);
-
-    // Get the highest confidence.
+    setIsLoading(true);
+    const arrayBuffer = await imgFile?.arrayBuffer();
+    var [inferenceResult] = await inferenceSqueezenet(arrayBuffer ?? "");
     var topResult = inferenceResult[0];
-
-    // Update the label and confidence
+    setIsLoading(false);
     setLabel(topResult.name.toUpperCase());
     setConfidence(topResult.probability);
-    setInferenceTime(`Inference speed: ${inferenceTime} seconds`);
-
   };
 
-  return (
-    <>
-      <button
-        className={styles.grid}
-        onClick={displayImageAndRunInference} >
-        Run Squeezenet inference
-      </button>
-      <br/>
-      <canvas ref={canvasRef} width={props.width} height={props.height} />
-      <span>{topResultLabel} {topResultConfidence}</span>
-      <span>{inferenceTime}</span>
-    </>
-  )
+  const porcentage = useMemo(() => {
+    return Number(topResultConfidence) * 100;
+  }, [topResultConfidence]);
 
+  return (
+    <div
+      style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+    >
+      <button
+        style={{
+          outline: "none",
+          background: "lightblue",
+          border: "none",
+          margin: "16px",
+          padding: "8px 16px",
+          borderRadius: "8px",
+          width: "100%",
+        }}
+        onClick={() => {
+          if (InputRef.current) InputRef.current.click();
+        }}
+      >
+        Escolher Imagem
+      </button>
+      <img
+        src={handleImageUrl(imgFile as File)}
+        style={{
+          maxWidth: "300px",
+          maxHeight: "300px",
+          objectFit: "contain",
+          borderRadius: "16px",
+        }}
+      />
+
+      <input
+        type="file"
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            const ImgFile = e.target.files[0];
+            setImgFile(ImgFile);
+          }
+        }}
+        style={{
+          display: "none",
+        }}
+        ref={InputRef}
+      />
+
+      <button
+        onClick={() => submitInference()}
+        style={{
+          outline: "none",
+          background: "orange",
+          border: "none",
+          margin: "16px",
+          padding: "8px 16px",
+          borderRadius: "8px",
+          width: "100%",
+          opacity: isLoading ? 0.5 : 1,
+        }}
+        disabled={isLoading}
+      >
+        Validar
+      </button>
+      <span>{topResultLabel}</span>
+      <span
+        style={{
+          color: porcentage > 50 ? "green" : "red",
+        }}
+      >
+        Porcentagem: {porcentage.toFixed(2) + "%"}
+      </span>
+    </div>
+  );
 };
 
 export default ImageCanvas;

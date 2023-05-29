@@ -1,11 +1,9 @@
-import type { NextPage } from 'next';
-import Head from 'next/head';
-import styles from '../styles/Home.module.css';
+import type { NextPage } from "next";
+import Head from "next/head";
+import styles from "../styles/Home.module.css";
 import ImageCanvas from "../components/ImageCanvas";
 
-
-const Home: NextPage = () => {  
-  
+const Home: NextPage = () => {
   return (
     <div className={styles.container}>
       <Head>
@@ -15,13 +13,10 @@ const Home: NextPage = () => {
       </Head>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>
-          Use ORT Web
-        </h1>
+        <h1 className={styles.title}>Beer Identifier</h1>
 
-      <ImageCanvas width={240} height={240}/>
-      <div id="result" className="mt-3">
-      </div>
+        <ImageCanvas width={240} height={240} />
+        <div id="result" className="mt-3"></div>
       </main>
 
       <footer className={styles.footer}>
@@ -29,11 +24,10 @@ const Home: NextPage = () => {
           href="https://onnxruntime.ai/docs"
           target="_blank"
           rel="noopener noreferrer"
-        >
-        </a>
+        ></a>
       </footer>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;
